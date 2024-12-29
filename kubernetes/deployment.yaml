@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playlist-recommender
+  namespace: altinojunior
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: playlist-recommender
+  template:
+    metadata:
+      labels:
+        app: playlist-recommender
+    spec:
+      containers:
+      - name: playlist-recommender
+        image: altino/playlist-recommender-api:latest
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: model-volume
+          mountPath: /app/data
+      volumes:
+      - name: model-volume
+        persistentVolumeClaim:
+          claimName: model-pvc

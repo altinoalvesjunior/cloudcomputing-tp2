@@ -65,32 +65,3 @@ def recommend():
         "recommendations": recommendations[:5],
         "model_version": datetime.fromtimestamp(model_last_modified).isoformat() if model_last_modified else None,
     })
-
-# @app.route('/api/song_info', methods=['GET'])
-# def song_info():
-#     load_model()
-#     if model is None:
-#         return jsonify({"error": "Model not available"}), 500
-#
-#     song_name = request.args.get('song', '')
-#     if not song_name:
-#         return jsonify({"error": "No song name provided"}), 400
-#
-#     relevant_rules = model[model['antecedents'].apply(lambda x: song_name in x)]
-#     as_consequent = model[model['consequents'].apply(lambda x: song_name in x)]
-#
-#     return jsonify({
-#         "song": song_name,
-#         "in_antecedents": len(relevant_rules),
-#         "in_consequents": len(as_consequent),
-#         "sample_antecedent_rules": relevant_rules.head(5).to_dict(orient='records') if not relevant_rules.empty else [],
-#         "sample_consequent_rules": as_consequent.head(5).to_dict(orient='records') if not as_consequent.empty else []
-#     })
-
-# @app.route('/api/frequent_songs', methods=['GET'])
-# def frequent_songs():
-#     n = request.args.get('n', default=10, type=int)
-#     return jsonify({"frequent_songs": get_frequent_songs(n)})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10100)
