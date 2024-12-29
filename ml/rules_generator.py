@@ -89,10 +89,10 @@ def generate_model(dataset_paths, output_path, songs_dataset_path=None):
 
 if __name__ == "__main__":
     dataset_paths = [
-        '../2023_spotify_ds1.csv',
-        '../2023_spotify_ds2.csv'
+        '/app/datasets/2023_spotify_ds1.csv',
+        '/app/datasets/2023_spotify_ds2.csv'
     ]
-    songs_dataset_path = '../2023_spotify_songs.csv'
+    songs_dataset_path = '/app/datasets/2023_spotify_songs.csv'
     output_path = '../data/rules.pkl'
 
     generate_model(dataset_paths, output_path, songs_dataset_path)

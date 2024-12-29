@@ -8,4 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY rules_generator.py .
 
+COPY datasets /app/datasets/
+
 CMD ["python", "rules_generator.py"]
