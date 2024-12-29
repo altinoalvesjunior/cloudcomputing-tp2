@@ -4,6 +4,8 @@ import pickle
 import logging
 from tqdm import tqdm
 
+import os
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def load_and_process_dataset(dataset_path):
@@ -93,7 +95,8 @@ if __name__ == "__main__":
         '/app/datasets/2023_spotify_ds2.csv'
     ]
     songs_dataset_path = '/app/datasets/2023_spotify_songs.csv'
-    output_path = '../data/rules.pkl'
+    output_path = '/app/data/rules.pkl'
+    os.makedirs('/app/data', exist_ok=True)
 
     generate_model(dataset_paths, output_path, songs_dataset_path)
     print(f"Modelo gerado e salvo em {output_path}")
