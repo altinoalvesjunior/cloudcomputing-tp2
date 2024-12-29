@@ -32,17 +32,17 @@ def generate_simple_rules(playlist_tracks, min_support=10, max_rules=1000000):
     track_counts = Counter([track for tracks in playlist_tracks.values() for track in tracks])
     frequent_tracks = {track for track, count in track_counts.items() if count >= min_support}
 
-    rules = []
+    rules_generated = 0
     for pid, tracks in tqdm(playlist_tracks.items(), desc="Gerando regras"):
         frequent_tracks_in_playlist = frequent_tracks.intersection(tracks)
         for track in frequent_tracks_in_playlist:
             other_tracks = frequent_tracks_in_playlist - {track}
             for other_track in other_tracks:
-                rules.append(
-                    (frozenset([track]), frozenset([other_track]), track_counts[other_track] / len(playlist_tracks)))
-                if len(rules) >= max_rules:
-                    return rules
-    return rules
+                yield (frozenset([track]), frozenset([other_track]),
+                       track_counts[other_track] / len(playlist_tracks))
+                rules_generated += 1
+                if rules_generated >= max_rules:
+                    return
 
 
 def generate_model(dataset_paths, output_path, songs_dataset_path=None):
@@ -63,15 +63,19 @@ def generate_model(dataset_paths, output_path, songs_dataset_path=None):
     logging.info(f"Total de playlists: {len(all_playlist_tracks)}")
     logging.info(f"Total de músicas únicas: {len(all_tracks)}")
 
-    rules = generate_simple_rules(all_playlist_tracks)
+    rules_generator = generate_simple_rules(all_playlist_tracks)
 
-    logging.info(f"Total de regras geradas: {len(rules)}")
+    rules = []
+    for rule in tqdm(rules_generator, desc="Gerando e salvando regras"):
+        rules.append(rule)
 
     rules_df = pd.DataFrame(rules, columns=['antecedents', 'consequents', 'confidence'])
-    rules_df['lift'] = rules_df['confidence'] / (
-        rules_df['consequents'].apply(lambda x: len(x) / len(all_playlist_tracks)))
-    rules_df = rules_df.sort_values('lift', ascending=False).head(1000000)
 
+    rules_df['lift'] = rules_df['confidence'] / (
+        rules_df['consequents'].apply(lambda x: len(x) / len(all_playlist_tracks))
+    )
+
+    rules_df = rules_df.sort_values('lift', ascending=False).head(1000000)
     antecedent_counts = Counter([item for items in rules_df['antecedents'] for item in items])
     consequent_counts = Counter([item for items in rules_df['consequents'] for item in items])
 
@@ -81,7 +85,7 @@ def generate_model(dataset_paths, output_path, songs_dataset_path=None):
         'top_consequents': consequent_counts.most_common(20),
         'num_unique_songs': len(all_tracks)
     }
-
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     logging.info(f"Salvando modelo em {output_path}")
     with open(output_path, 'wb') as f:
         pickle.dump({'rules': rules_df, 'info': model_info}, f)
