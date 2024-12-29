@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
       - name: generate-model-ml
-        image: altino/playlist-recommender-ml:0.1
+        image: altino/playlist-recommender-ml:0.2
         volumeMounts:
         - name: model-volume
           mountPath: /app/data
