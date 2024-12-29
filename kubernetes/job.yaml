@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-model-ml
+  namespace: altinojunior
+spec:
+  template:
+    spec:
+      containers:
+      - name: generate-model-ml
+        image: altino/playlist-recommender-ml:0.1
+        volumeMounts:
+        - name: model-volume
+          mountPath: /app/data
+      restartPolicy: Never
+      volumes:
+      - name: model-volume
+        persistentVolumeClaim:
+          claimName: model-pvc
+  backoffLimit: 4
