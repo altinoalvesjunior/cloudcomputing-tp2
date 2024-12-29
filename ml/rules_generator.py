@@ -3,95 +3,63 @@ from collections import Counter
 import pickle
 import logging
 from tqdm import tqdm
-
 import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def load_and_process_dataset(dataset_path):
-    logging.info(f"Processando dataset: {dataset_path}")
-
-    chunks = pd.read_csv(dataset_path, chunksize=100000)
+def load_and_process_dataset(dataset_path, chunksize=100000):
     playlist_tracks = {}
     all_tracks = set()
-
-    for chunk in tqdm(chunks, desc="Processando chunks"):
-        for _, row in chunk.iterrows():
-            pid = row['pid']
-            track = row['track_name']
+    for chunk in pd.read_csv(dataset_path, chunksize=chunksize, usecols=['pid', 'track_name']):
+        grouped = chunk.groupby('pid')['track_name'].apply(set).to_dict()
+        for pid, tracks in grouped.items():
             if pid not in playlist_tracks:
                 playlist_tracks[pid] = set()
-            playlist_tracks[pid].add(track)
-            all_tracks.add(track)
-
+            playlist_tracks[pid].update(tracks)
+            all_tracks.update(tracks)
     return playlist_tracks, all_tracks
 
-
-def generate_simple_rules(playlist_tracks, min_support=10, max_rules=1000000):
-    logging.info("Gerando regras simples...")
-    track_counts = Counter([track for tracks in playlist_tracks.values() for track in tracks])
+def generate_simple_rules_in_stream(playlist_tracks, min_support=10, max_rules=1000000):
+    track_counts = Counter(track for tracks in playlist_tracks.values() for track in tracks)
     frequent_tracks = {track for track, count in track_counts.items() if count >= min_support}
-
     rules_generated = 0
-    for pid, tracks in tqdm(playlist_tracks.items(), desc="Gerando regras"):
+    for pid, tracks in playlist_tracks.items():
         frequent_tracks_in_playlist = frequent_tracks.intersection(tracks)
         for track in frequent_tracks_in_playlist:
-            other_tracks = frequent_tracks_in_playlist - {track}
-            for other_track in other_tracks:
+            for other_track in frequent_tracks_in_playlist - {track}:
                 yield (frozenset([track]), frozenset([other_track]),
                        track_counts[other_track] / len(playlist_tracks))
                 rules_generated += 1
                 if rules_generated >= max_rules:
                     return
 
-
-def generate_model(dataset_paths, output_path, songs_dataset_path=None):
-    logging.info("Iniciando a geração do modelo")
-
-    all_playlist_tracks = {}
-    all_tracks = set()
-
+def generate_model(dataset_paths, output_path, songs_dataset_path=None, chunksize=100000):
+    all_playlist_tracks, all_tracks = {}, set()
     for dataset_path in dataset_paths:
-        playlist_tracks, tracks = load_and_process_dataset(dataset_path)
+        playlist_tracks, tracks = load_and_process_dataset(dataset_path, chunksize)
         all_playlist_tracks.update(playlist_tracks)
         all_tracks.update(tracks)
-
     if songs_dataset_path:
-        songs_df = pd.read_csv(songs_dataset_path)
-        all_tracks.update(songs_df['track_name'])
-
-    logging.info(f"Total de playlists: {len(all_playlist_tracks)}")
-    logging.info(f"Total de músicas únicas: {len(all_tracks)}")
-
-    rules_generator = generate_simple_rules(all_playlist_tracks)
-
-    rules = []
-    for rule in tqdm(rules_generator, desc="Gerando e salvando regras"):
-        rules.append(rule)
-
-    rules_df = pd.DataFrame(rules, columns=['antecedents', 'consequents', 'confidence'])
-
-    rules_df['lift'] = rules_df['confidence'] / (
-        rules_df['consequents'].apply(lambda x: len(x) / len(all_playlist_tracks))
-    )
-
-    rules_df = rules_df.sort_values('lift', ascending=False).head(1000000)
-    antecedent_counts = Counter([item for items in rules_df['antecedents'] for item in items])
-    consequent_counts = Counter([item for items in rules_df['consequents'] for item in items])
-
+        all_tracks.update(pd.read_csv(songs_dataset_path, usecols=['track_name'])['track_name'])
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    temp_file = output_path + ".tmp"
+    with open(temp_file, 'w') as f:
+        for rule in generate_simple_rules_in_stream(all_playlist_tracks):
+            f.write(f"{rule}\n")
+    antecedent_counts, consequent_counts = Counter(), Counter()
+    with open(temp_file, 'r') as f:
+        for line in f:
+            rule = eval(line.strip())
+            antecedent_counts.update(rule[0])
+            consequent_counts.update(rule[1])
     model_info = {
-        'num_rules': len(rules_df),
+        'num_rules': sum(1 for _ in open(temp_file)),
         'top_antecedents': antecedent_counts.most_common(20),
         'top_consequents': consequent_counts.most_common(20),
         'num_unique_songs': len(all_tracks)
     }
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    logging.info(f"Salvando modelo em {output_path}")
     with open(output_path, 'wb') as f:
-        pickle.dump({'rules': rules_df, 'info': model_info}, f)
-
-    logging.info("Geração do modelo completa")
-    logging.info(f"Informações do modelo: {model_info}")
+        pickle.dump({'rules_file': temp_file, 'info': model_info}, f)
 
 if __name__ == "__main__":
     dataset_paths = [
