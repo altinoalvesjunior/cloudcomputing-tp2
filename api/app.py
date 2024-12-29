@@ -65,3 +65,6 @@ def recommend():
         "recommendations": recommendations[:5],
         "model_version": datetime.fromtimestamp(model_last_modified).isoformat() if model_last_modified else None,
     })
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=9101)

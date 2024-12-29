@@ -9,6 +9,6 @@ spec:
   type: NodePort
   ports:
     - protocol: TCP
-      port: 5000
-      targetPort: 5000
+      port: 9101
+      targetPort: 9101
       nodePort: 30502

@@ -1,6 +1,8 @@
 FROM python:3.9-slim-bullseye
 LABEL authors="altino"
 
+EXPOSE 9101
+
 WORKDIR /app
 
 COPY requirements.txt .

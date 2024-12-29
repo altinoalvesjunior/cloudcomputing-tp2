@@ -17,7 +17,7 @@ spec:
       - name: playlist-recommender
         image: altino/playlist-recommender-api:0.1
         ports:
-        - containerPort: 5000
+        - containerPort: 9101
         volumeMounts:
         - name: model-volume
           mountPath: /app/data
