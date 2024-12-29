@@ -6,8 +6,9 @@ metadata:
 spec:
   selector:
     app: playlist-recommender
+  type: NodePort
   ports:
     - protocol: TCP
-      port: 30502
+      port: 5000
       targetPort: 5000
-  type: ClusterIP
+      nodePort: 30502
