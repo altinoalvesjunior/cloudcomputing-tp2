@@ -84,6 +84,10 @@ model = None
 model_info = None
 model_last_modified = None
 
+@app.route('/')
+def home():
+    return "Playlist Recommender API is running!"
+
 def load_model():
     global model, model_info, model_last_modified
     logging.info(f"Attempting to load model from {MODEL_PATH}")
@@ -147,4 +151,5 @@ def recommend():
     })
 
 if __name__ == "__main__":
+    load_model()
     app.run(host='0.0.0.0', port=7000)
