@@ -11,6 +11,6 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY app.py .
 
 ENV FLASK_APP=app.py
-ENV MODEL_PATH=/data/rules.pkl
+ENV MODEL_PATH=/app/data/rules.pkl
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=7000"]
+CMD ["python", "app.py"]
