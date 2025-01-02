@@ -8,7 +8,8 @@ from collections import Counter
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-MODEL_PATH = os.environ.get('MODEL_PATH', '/app/data/rules.pkl')
+# MODEL_PATH = os.environ.get('MODEL_PATH', '/app/data/rules.pkl')
+MODEL_PATH = os.environ.get('MODEL_PATH', '../ml/rules.pkl')
 model = None
 model_last_modified = None
 
@@ -51,22 +52,20 @@ def recommend():
 
     recommendations = Counter()
     for song in songs:
-        if song in model:
-            recommendations.update(model[song])
+        if song in model['rules']:
+            recommendations.update(model['rules'][song])
 
     # Remove input songs from recommendations
     for song in songs:
         if song in recommendations:
             del recommendations[song]
 
-    top_recommendations = [song for song, score in recommendations.most_common(5)]
+    top_recommendations = [song for song, _ in recommendations.most_common(5)]
 
     return jsonify({
         "recommendations": top_recommendations,
-        "model_version": "1.4",
+        "model_version": "1.6",
         "model_date": datetime.fromtimestamp(model_last_modified).isoformat() if model_last_modified else None,
-        "num_rules": len(model),
-        "num_unique_songs": len(set(song for songs in model.values() for song in songs))
     })
 
 @app.route('/api/health', methods=['GET'])
@@ -78,8 +77,6 @@ def health_check():
         "status": "healthy" if model is not None else "unhealthy",
         "model_loaded": model is not None,
         "model_date": datetime.fromtimestamp(model_last_modified).isoformat() if model_last_modified else None,
-        "num_rules": model['num_rules'] if model else None,
-        "num_unique_songs": model['num_unique_songs'] if model else None
     })
 
 
