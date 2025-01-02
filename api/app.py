@@ -23,10 +23,8 @@ def load_model():
                 with open(MODEL_PATH, 'rb') as f:
                     model = pickle.load(f)
                 model_last_modified = current_modified
-                logging.info(f"Model loaded successfully. Type: {type(model)}")
-                logging.info(f"Number of items in model: {len(model)}")
-                logging.info(f"Sample of model content: {list(model.items())[:5]}")
-                logging.info(f"Types of values in model: {set(type(v) for v in model.values())}")
+                logging.info(f"Model loaded successfully. Number of songs: {len(model)}")
+                logging.info(f"Sample of model content: {list(model.items())[:2]}")
             except Exception as e:
                 logging.error(f"Error loading model: {str(e)}", exc_info=True)
                 model = None
@@ -50,54 +48,26 @@ def recommend():
         return jsonify({"error": "No songs provided"}), 400
 
     logging.info(f"Received request for songs: {songs}")
-    logging.info(f"Model type: {type(model)}")
-    logging.info(f"Sample of model content: {list(model.items())[:5]}")
 
     recommendations = Counter()
     for song in songs:
         if song in model:
-            song_recommendations = model[song]
-            if isinstance(song_recommendations, dict):
-                recommendations.update(song_recommendations)
-            else:
-                logging.warning(f"Unexpected type for song recommendations: {type(song_recommendations)}")
+            recommendations.update(model[song])
 
     # Remove input songs from recommendations
     for song in songs:
         if song in recommendations:
             del recommendations[song]
 
-    top_recommendations = [song for song, _ in recommendations.most_common(5)]
-
-    num_unique_songs = len(set(song for songs in model.values() if isinstance(songs, dict) for song in songs))
+    top_recommendations = [song for song, score in recommendations.most_common(5)]
 
     return jsonify({
         "recommendations": top_recommendations,
-        "model_version": "1.3",
+        "model_version": "1.4",
         "model_date": datetime.fromtimestamp(model_last_modified).isoformat() if model_last_modified else None,
         "num_rules": len(model),
-        "num_unique_songs": num_unique_songs
+        "num_unique_songs": len(set(song for songs in model.values() for song in songs))
     })
-
-def load_model():
-    global model, model_last_modified
-    logging.info(f"Attempting to load model from {MODEL_PATH}")
-    if os.path.exists(MODEL_PATH):
-        current_modified = os.path.getmtime(MODEL_PATH)
-        if model is None or current_modified != model_last_modified:
-            try:
-                with open(MODEL_PATH, 'rb') as f:
-                    model = pickle.load(f)
-                model_last_modified = current_modified
-                logging.info(f"Model loaded successfully. Type: {type(model)}")
-                logging.info(f"Number of items in model: {len(model)}")
-                logging.info(f"Sample of model content: {list(model.items())[:5]}")
-                logging.info(f"Types of values in model: {set(type(v) for v in model.values())}")
-            except Exception as e:
-                logging.error(f"Error loading model: {str(e)}", exc_info=True)
-                model = None
-    else:
-        logging.error(f"Model file not found at {MODEL_PATH}")
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
