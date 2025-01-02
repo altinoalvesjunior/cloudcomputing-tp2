@@ -8,8 +8,7 @@ from collections import Counter
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# MODEL_PATH = os.environ.get('MODEL_PATH', '/app/data/rules.pkl')
-MODEL_PATH = os.environ.get('MODEL_PATH', '../ml/rules.pkl')
+MODEL_PATH = os.environ.get('MODEL_PATH', '/app/data/rules.pkl')
 model = None
 model_last_modified = None
 
