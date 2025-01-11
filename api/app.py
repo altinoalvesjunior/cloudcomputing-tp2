@@ -4,8 +4,10 @@ import pickle
 import os
 from datetime import datetime
 from collections import Counter
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 logging.basicConfig(level=logging.INFO)
 
 MODEL_PATH = os.environ.get('MODEL_PATH', '/app/data/rules.pkl')
