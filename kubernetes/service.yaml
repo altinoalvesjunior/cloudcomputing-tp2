@@ -9,6 +9,6 @@ spec:
   type: NodePort
   ports:
     - protocol: TCP
-      port: 7000
+      port: 30502
       targetPort: 7000
       nodePort: 30502
