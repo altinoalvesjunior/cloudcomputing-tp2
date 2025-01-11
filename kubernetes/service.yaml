@@ -8,7 +8,7 @@ spec:
     app: playlist-recommender
   type: NodePort
   ports:
-    - name: TCP
+    - name: http
       port: 30502
       targetPort: 7000
       nodePort: 30502
