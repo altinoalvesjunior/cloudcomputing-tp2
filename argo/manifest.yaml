@@ -1,0 +1,11 @@
+project: altinojunior-project
+source:
+  repoURL: https://github.com/altinoalvesjunior/cloudcomputing-tp2.git
+  path: kubernetes
+  targetRevision: HEAD
+destination:
+  server: https://kubernetes.default.svc
+  namespace: altinojunior
+syncPolicy:
+  automated:
+    selfHeal: true
